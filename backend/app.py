@@ -24,13 +24,13 @@ app = FastAPI(title="SpamShield AI")
 # -----------------------------
 # Enable CORS
 # -----------------------------
+# -----------------------------
+# Enable CORS
+# -----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://spam-shield-7ckbzthib-harvee.vercel.app",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
