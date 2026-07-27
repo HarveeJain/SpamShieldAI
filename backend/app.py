@@ -99,24 +99,29 @@ def home():
 # -----------------------------
 @app.post("/predict")
 def predict(data: MessageRequest):
+    try:
+        processed = transform_text(data.message)
+        print("Processed:", processed)
 
-    # Preprocess text
-    processed = transform_text(data.message)
+        vector = vectorizer.transform([processed]).toarray()
+        print("Vector created")
 
-    # Convert to TF-IDF
-    vector = vectorizer.transform([processed]).toarray()
+        prediction = model.predict(vector)[0]
+        print("Prediction:", prediction)
 
-    # Prediction
-    prediction = model.predict(vector)[0]
+        probabilities = model.predict_proba(vector)[0]
+        print("Probabilities:", probabilities)
 
-    # Probability
-    probabilities = model.predict_proba(vector)[0]
+        confidence = max(probabilities) * 100
 
-    confidence = max(probabilities) * 100
+        result = "Spam" if prediction == 1 else "Ham"
 
-    result = "Spam" if prediction == 1 else "Ham"
+        return {
+            "prediction": result,
+            "confidence": round(confidence, 2)
+        }
 
-    return {
-        "prediction": result,
-        "confidence": round(confidence, 2)
-    }
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
