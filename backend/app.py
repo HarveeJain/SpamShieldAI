@@ -9,25 +9,21 @@ import string
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 
+# -----------------------------
 # Download required NLTK resources
-import nltk
-
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
-
-try:
-    nltk.data.find("corpora/stopwords")
-except LookupError:
-    nltk.download("stopwords")
+# -----------------------------
+nltk.download("punkt")
+nltk.download("punkt_tab")
+nltk.download("stopwords")
 
 # -----------------------------
 # FastAPI App
 # -----------------------------
 app = FastAPI(title="SpamShield AI")
 
+# -----------------------------
 # Enable CORS
+# -----------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -54,9 +50,8 @@ stop_words = set(stopwords.words("english"))
 class MessageRequest(BaseModel):
     message: str
 
-
 # -----------------------------
-# Text Preprocessing Function
+# Text Preprocessing
 # -----------------------------
 def transform_text(text):
     text = text.lower()
@@ -70,19 +65,18 @@ def transform_text(text):
         if word.isalnum():
             words.append(word)
 
-    # Remove stopwords
+    # Remove stopwords and punctuation
     filtered = []
     for word in words:
         if word not in stop_words and word not in string.punctuation:
             filtered.append(word)
 
-    # Apply stemming
+    # Stemming
     stemmed = []
     for word in filtered:
         stemmed.append(ps.stem(word))
 
     return " ".join(stemmed)
-
 
 # -----------------------------
 # Home Route
@@ -93,35 +87,28 @@ def home():
         "message": "SpamShield AI Backend Running 🚀"
     }
 
-
 # -----------------------------
 # Prediction Route
 # -----------------------------
 @app.post("/predict")
 def predict(data: MessageRequest):
-    try:
-        processed = transform_text(data.message)
-        print("Processed:", processed)
 
-        vector = vectorizer.transform([processed]).toarray()
-        print("Vector created")
+    # Preprocess
+    processed = transform_text(data.message)
 
-        prediction = model.predict(vector)[0]
-        print("Prediction:", prediction)
+    # TF-IDF Vectorization
+    vector = vectorizer.transform([processed]).toarray()
 
-        probabilities = model.predict_proba(vector)[0]
-        print("Probabilities:", probabilities)
+    # Prediction
+    prediction = model.predict(vector)[0]
 
-        confidence = max(probabilities) * 100
+    # Confidence Score
+    probabilities = model.predict_proba(vector)[0]
+    confidence = max(probabilities) * 100
 
-        result = "Spam" if prediction == 1 else "Ham"
+    result = "Spam" if prediction == 1 else "Ham"
 
-        return {
-            "prediction": result,
-            "confidence": round(confidence, 2)
-        }
-
-    except Exception as e:
-        return {
-            "error": str(e)
-        }
+    return {
+        "prediction": result,
+        "confidence": round(confidence, 2)
+    }
